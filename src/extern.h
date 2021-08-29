@@ -13,7 +13,7 @@
 /* Include should be removed in final releases, only used for debugging. */
 #include <stdio.h>
 
-uint8_t *comp_rle(uint8_t *, uint32_t);
-uint8_t *decomp_rle(uint8_t *, uint32_t);
+uint8_t *comp_rle(uint8_t *, uint32_t, uint32_t *);
+uint8_t *decomp_rle(uint8_t *, uint32_t, uint32_t *);
 
 #endif

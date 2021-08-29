@@ -8,10 +8,14 @@ main(void)
 	uint8_t bytes[] = { 
 		0xff,
 		0xff,
-		0xfa
+		0xff,
+		0xff,
+		0xff,
+		0xff,
+		0x00,
+		0xff,
 	};
-	uint8_t *res = comp_rle(bytes, ARR_LEN(bytes));
-	
-
+	uint32_t len;
+	uint8_t *res = comp_rle(bytes, ARR_LEN(bytes), &len);
 	free(res);
 }

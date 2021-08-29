@@ -3,7 +3,7 @@
 #define WPTR_INC(wptr, val) *wptr = val; ++wptr
 
 uint8_t*
-comp_rle(uint8_t *bytes, uint32_t size)
+comp_rle(uint8_t *bytes, uint32_t size, uint32_t *new)
 {
 	/* Allocate a buffer size equal to the worst case compression. */
 	uint8_t *ret = malloc(size * 8);
@@ -20,8 +20,7 @@ comp_rle(uint8_t *bytes, uint32_t size)
 			/* Test the current compression bit is equal to the bit being analysed. */
 			if ((*bptr >> i & 1 ) == (acc >> 7)) {
 				/* Validate that there is no carry to the current value bit. */
-				if (1) {
-					++acc;
+				if ((uint8_t)*bptr << 1 != 254) {
 				} else {
 					/* Write the byte to the write ptr. */
 					WPTR_INC(wptr, acc);
@@ -29,16 +28,26 @@ comp_rle(uint8_t *bytes, uint32_t size)
 					acc -= (acc & 127);	
 				}
 			} else {
-				fprintf(stdout, "acc before switch %d\n", acc);
 				/* Write the previous compression byte. */
 				WPTR_INC(wptr, acc);
 				/* Toggle the target value bit in `acc`. */
 				acc ^= 128;
 				/* Reset the least significent bits. */
 				acc -= (acc & 127);
+				++acc;
 			}
 		}
 	}
+	/* Write anything left in the accumulator. */
+	WPTR_INC(wptr, acc);
+
+	/* Fetch the new size using a pointer subtraction. */
+	*new = ((void *)wptr) - ((void *)&(*ret));
+	
+	
+	/* Reallocate the buffer to match the actual size. */
+	ret = (uint8_t *)realloc(ret, sizeof(*ret) * (*new));
+	fprintf(stdout, "before size %d, after size %d\n", size, *new);
 	return ret;
 }
 
