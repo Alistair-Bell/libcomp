@@ -5,20 +5,23 @@ OBJECTS       = ${SOURCES:.c=.o}
 OUT           = comp
 OUT_LIB       = lib${OUT}.a
 
-S_SOURCES      = sandbox.c
-S_OBJECTS      = ${S_SOURCES:.c=.o}
-S_OUT          = sandbox
+E_SOURCES      = example.c
+E_OBJECTS      = ${E_SOURCES:.c=.o}
+E_OUT          = example
 
 .c.o:
-	$(CC) -c ${CONFIG_CC_FLAGS} $< -o $@
+	@echo "cc $@"
+	@$(CC) -c ${CONFIG_CC_FLAGS} $< -o $@
 
 all: ${OUT}
 
 ${OUT}: ${OBJECTS}
-	$(AR) rcs ${OUT_LIB} ${OBJECTS}
+	@echo "ar ${OUT_LIB}"
+	@$(AR) rcs ${OUT_LIB} ${OBJECTS}
 
-${S_OUT}: ${S_OBJECTS} ${OUT}
-	$(CC) -L . -o $@ ${S_OBJECTS} -l${OUT}
+${E_OUT}: ${OUT} ${E_OBJECTS}
+	@echo "cc $@"
+	@$(CC) -L . -o $@ ${E_OBJECTS} -l${OUT}
 
 clean:
 	rm ${OUT_LIB}
