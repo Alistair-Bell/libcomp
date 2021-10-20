@@ -2,3 +2,4 @@
 lib*
 config.mk
 example
+*.core
