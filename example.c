@@ -22,4 +22,5 @@ main(void)
 
 	free(res);
 	free(dec);
+	return 0;
 }
