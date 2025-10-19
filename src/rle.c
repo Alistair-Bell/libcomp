@@ -1,53 +1,53 @@
 #include "extern.h"
 
-#define WPTR_INC(wptr, val) *wptr = val; ++wptr
+#define PTR_DIFF(end, start) (((void *)end) - ((void *)start))
+#define WPTR_INC(wptr, val) \
+	++wptr;                 \
+	*wptr = 1 + (val << 7)
+
 
 uint8_t*
 comp_rle(uint8_t *bytes, uint32_t size, uint32_t *new)
 {
-	/* Allocate a buffer size equal to the worst case compression. */
-	uint8_t *ret = malloc(size * 8);
-	/* Set the byte ptr to the start of the byte array. */
-	uint8_t *bptr = &(*bytes);
-	/* Stores the memory adress of the next write location to the return buffer. */
-	uint8_t *wptr = &(*ret);
-	/* Set the most significent bit to the current value being compressed. */
-	register uint8_t acc = *bptr << 7;
-
-	for (; bptr < bytes + size; ++bptr) {
-		uint8_t i;
-		for (i = 0; i < 8; ++i) {
-			/* Test the current compression bit is equal to the bit being analysed. */
-			if ((*bptr >> i & 1 ) == (acc >> 7)) {
-				/* Validate that there is no carry to the current value bit. */
-				if ((uint8_t)*bptr << 1 != 254) {
-				} else {
-					/* Write the byte to the write ptr. */
-					WPTR_INC(wptr, acc);
-					/* Use a bitmask and subtract the lower 7 bits. */
-					acc -= (acc & 127);	
-				}
-			} else {
-				/* Write the previous compression byte. */
-				WPTR_INC(wptr, acc);
-				/* Toggle the target value bit in `acc`. */
-				acc ^= 128;
-				/* Reset the least significent bits. */
-				acc -= (acc & 127);
-				++acc;
-			}
-		}
+	if (size < 1) {
+		/* Size is equal to 0. */
+		return NULL;
 	}
-	/* Write anything left in the accumulator. */
-	WPTR_INC(wptr, acc);
 
-	/* Fetch the new size using a pointer subtraction. */
-	*new = ((void *)wptr) - ((void *)&(*ret));
-	
-	
-	/* Reallocate the buffer to match the actual size. */
-	ret = (uint8_t *)realloc(ret, sizeof(*ret) * (*new));
-	fprintf(stdout, "before size %d, after size %d\n", size, *new);
+	/* 
+	 * Allocate our return buffer, this will store the compressed data.
+	 * In this case we alloc the worst case size.
+	 */
+	uint8_t *ret = (uint8_t *)malloc(size * 8);
+	/* Save the memory location of the start of the return value, this is as the wptr will incriment the buffer. */
+	uint8_t *static_ret = ret;
+	/* Stores the next location to write to. */
+	uint8_t *wptr = ret;
+	*wptr = (*bytes & 1u) << 7;
+
+	uint32_t i;
+	for (i = 0; i < size; ++i) {
+		uint16_t mask = 0x1;
+		do {
+			/* Check if the current bit is equal to the compression bit in use. */
+			register uint8_t curr_bit = (bytes[i] & mask) != 0;
+			if (curr_bit != (*wptr) >> 7) {
+				WPTR_INC(wptr, curr_bit);
+			} else {
+				/* This is when the max compressed count has been reached for the data. */
+				if ((*wptr << 1) == 254) {
+					WPTR_INC(wptr, curr_bit);
+				} else {
+					++(*wptr);
+				}
+			}
+			mask <<= 1u;
+		} while (mask < 129);
+	}
+	++wptr;
+
+	*new = PTR_DIFF(wptr, static_ret);
+	ret = static_ret;
 	return ret;
 }
 
